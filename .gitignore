@@ -1,0 +1,17 @@
+# Gradle / build output
+.gradle/
+build/
+local.properties
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.navigation/
+captures/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# WorkBuddy project data (not part of source)
+.workbuddy/

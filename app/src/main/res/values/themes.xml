@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- NoActionBar + explicit MaterialToolbar per screen: Android 15/16
+         enforce edge-to-edge (content draws behind system bars), and the
+         classic window-provided ActionBar doesn't cooperate with that.
+         Each screen's root uses fitsSystemWindows to pad for the bars. -->
+    <!-- 蓝色为默认配色 -->
+    <style name="Theme.Snippets" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/brand_container</item>
+        <item name="colorOnPrimaryContainer">@color/brand</item>
+        <item name="colorSecondary">@color/brand</item>
+        <item name="colorOnSecondary">@color/on_primary</item>
+        <item name="colorSecondaryContainer">@color/brand_container</item>
+        <item name="colorOnSecondaryContainer">@color/brand</item>
+    </style>
+
+    <!-- 绿 -->
+    <style name="Theme.Snippets.Green" parent="Theme.Snippets">
+        <item name="colorPrimary">@color/palette_green</item>
+        <item name="colorOnPrimary">@color/palette_green_on</item>
+        <item name="colorPrimaryContainer">@color/palette_green_container</item>
+        <item name="colorOnPrimaryContainer">@color/palette_green</item>
+        <item name="colorSecondary">@color/palette_green</item>
+        <item name="colorOnSecondary">@color/palette_green_on</item>
+        <item name="colorSecondaryContainer">@color/palette_green_container</item>
+        <item name="colorOnSecondaryContainer">@color/palette_green</item>
+    </style>
+
+    <!-- 紫 -->
+    <style name="Theme.Snippets.Purple" parent="Theme.Snippets">
+        <item name="colorPrimary">@color/palette_purple</item>
+        <item name="colorOnPrimary">@color/palette_purple_on</item>
+        <item name="colorPrimaryContainer">@color/palette_purple_container</item>
+        <item name="colorOnPrimaryContainer">@color/palette_purple</item>
+        <item name="colorSecondary">@color/palette_purple</item>
+        <item name="colorOnSecondary">@color/palette_purple_on</item>
+        <item name="colorSecondaryContainer">@color/palette_purple_container</item>
+        <item name="colorOnSecondaryContainer">@color/palette_purple</item>
+    </style>
+
+    <!-- 青 -->
+    <style name="Theme.Snippets.Teal" parent="Theme.Snippets">
+        <item name="colorPrimary">@color/palette_teal</item>
+        <item name="colorOnPrimary">@color/palette_teal_on</item>
+        <item name="colorPrimaryContainer">@color/palette_teal_container</item>
+        <item name="colorOnPrimaryContainer">@color/palette_teal</item>
+        <item name="colorSecondary">@color/palette_teal</item>
+        <item name="colorOnSecondary">@color/palette_teal_on</item>
+        <item name="colorSecondaryContainer">@color/palette_teal_container</item>
+        <item name="colorOnSecondaryContainer">@color/palette_teal</item>
+    </style>
+
+    <!-- 橙 -->
+    <style name="Theme.Snippets.Orange" parent="Theme.Snippets">
+        <item name="colorPrimary">@color/palette_orange</item>
+        <item name="colorOnPrimary">@color/palette_orange_on</item>
+        <item name="colorPrimaryContainer">@color/palette_orange_container</item>
+        <item name="colorOnPrimaryContainer">@color/palette_orange</item>
+        <item name="colorSecondary">@color/palette_orange</item>
+        <item name="colorOnSecondary">@color/palette_orange_on</item>
+        <item name="colorSecondaryContainer">@color/palette_orange_container</item>
+        <item name="colorOnSecondaryContainer">@color/palette_orange</item>
+    </style>
+
+    <!-- 粉 -->
+    <style name="Theme.Snippets.Pink" parent="Theme.Snippets">
+        <item name="colorPrimary">@color/palette_pink</item>
+        <item name="colorOnPrimary">@color/palette_pink_on</item>
+        <item name="colorPrimaryContainer">@color/palette_pink_container</item>
+        <item name="colorOnPrimaryContainer">@color/palette_pink</item>
+        <item name="colorSecondary">@color/palette_pink</item>
+        <item name="colorOnSecondary">@color/palette_pink_on</item>
+        <item name="colorSecondaryContainer">@color/palette_pink_container</item>
+        <item name="colorOnSecondaryContainer">@color/palette_pink</item>
+    </style>
+
+    <!-- For CopyNoteActivity / FillTemplateActivity: draws nothing, so the widget
+         tap looks like a pure "copy" action with no app opening. -->
+    <style name="Theme.Snippets.Transparent" parent="Theme.Snippets">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+</resources>

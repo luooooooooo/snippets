@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色模式下的品牌色：主色提亮、容器压暗、文字压暗，保证对比度 -->
+    <color name="brand">#64B5F6</color>
+    <color name="brand_container">#0D47A1</color>
+    <color name="on_primary">#06294F</color>
+
+    <!-- Widget colors for dark mode; the launcher resolves these against the
+         system configuration, so the widget follows the system theme (not the
+         in-app override, which only affects the app's own activities). -->
+    <color name="widget_background">#F2303030</color>
+    <color name="widget_text">#ECECEC</color>
+</resources>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  #editor {
+    min-height: 100vh;
+    box-sizing: border-box;
+    padding: 16px;
+    outline: none;
+    font-family: sans-serif;
+    font-size: 16px;
+    word-wrap: break-word;
+  }
+  #editor table, #editor td, #editor th { border: 1px solid currentColor; border-collapse: collapse; }
+  #editor td, #editor th { padding: 4px 8px; }
+  /* Template slot highlight — editor-only styling; the attribute itself is
+     inert in the copied HTML. */
+  #editor [data-slot] {
+    background: rgba(255, 213, 79, 0.35);
+    outline: 1px dashed rgba(255, 160, 0, 0.8);
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+<div id="editor" contenteditable="true"></div>
+<script>
+  var ed = document.getElementById('editor');
+
+  /* Notes can contain HTML from anywhere (paste, hand-edited source), and
+     innerHTML injection executes attribute handlers like <img onerror=...>.
+     Nothing sensitive is reachable here (no network permission, the bridge
+     only receives HTML), but strip active content anyway. */
+  function sanitize() {
+    /* Frames get the JS bridge too (addJavascriptInterface applies to every
+       frame), so an embedded data: document could call Snippets directly —
+       remove anything that hosts a nested browsing context or plugin. */
+    var bad = ed.querySelectorAll('script, iframe, frame, embed, object');
+    for (var k = 0; k < bad.length; k++) bad[k].remove();
+    var all = ed.querySelectorAll('*');
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      for (var j = el.attributes.length - 1; j >= 0; j--) {
+        var a = el.attributes[j];
+        var n = a.name.toLowerCase();
+        /* Browsers drop ASCII control chars and spaces when parsing URLs, so
+           "jav\tascript:" still executes — compare the normalized form. */
+        var v = a.value.replace(/[\u0000-\u0020]/g, '').toLowerCase();
+        if (n.indexOf('on') === 0 ||
+            ((n === 'href' || n === 'src' || n === 'formaction' || n === 'xlink:href') &&
+             v.indexOf('javascript:') === 0)) {
+          el.removeAttribute(a.name);
+        }
+      }
+    }
+  }
+
+  /* Called from Kotlin once the page is ready: injects the note's HTML and
+     the theme's text color (so dark mode is readable). */
+  function setup(html, color) {
+    ed.innerHTML = html;
+    sanitize();
+    ed.style.color = color;
+    if (ed.textContent.trim() === '') ed.focus();
+  }
+
+  function getHtml() { return ed.innerHTML; }
+
+  /* Pushes the current HTML to Kotlin. Runs on every edit, so the Kotlin
+     side always has a synchronous, up-to-date copy for save/rotation.
+     Sanitizing here also covers HTML that arrives via paste. */
+  function report() {
+    sanitize();
+    Snippets.onHtmlChanged(getHtml());
+  }
+
+  function cmd(c, v) {
+    document.execCommand(c, false, v === undefined ? null : v);
+    ed.focus();
+    report();
+  }
+
+  ed.addEventListener('input', report);
+
+  /* ---- template slots (one per document) ---- */
+
+  function unwrapEl(el) {
+    while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el);
+    el.remove();
+  }
+
+  /* Selection inside/over an existing slot removes it; otherwise the current
+     selection becomes the slot (replacing any previous one — single slot). */
+  function toggleSlot() {
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var existing = ed.querySelector('[data-slot]');
+    if (existing && (existing.contains(range.startContainer) || sel.containsNode(existing, true))) {
+      unwrapEl(existing);
+      report();
+      return;
+    }
+    if (range.collapsed) return;
+    if (existing) unwrapEl(existing);
+    var span = document.createElement('span');
+    span.setAttribute('data-slot', '1');
+    try {
+      range.surroundContents(span);
+    } catch (e) {
+      /* Selection crosses element boundaries: extract and rewrap. */
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+    }
+    report();
+  }
+
+  function setSlotText(t) {
+    var s = ed.querySelector('[data-slot]');
+    if (s) { s.textContent = t; report(); }
+  }
+</script>
+</body>
+</html>

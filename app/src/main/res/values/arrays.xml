@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Must stay in the same order as EditorActivity.COLOR_VALUES. -->
+    <string-array name="color_names">
+        <item>红</item>
+        <item>橙</item>
+        <item>绿</item>
+        <item>蓝</item>
+        <item>紫</item>
+        <item>灰</item>
+    </string-array>
+
+    <!-- Must stay in the same order as EditorActivity.HIGHLIGHT_VALUES. -->
+    <string-array name="highlight_names">
+        <item>无</item>
+        <item>黄</item>
+        <item>绿</item>
+        <item>蓝</item>
+        <item>粉</item>
+    </string-array>
+
+    <!-- Order matches the modes array in MainActivity.pickTheme. -->
+    <string-array name="theme_names">
+        <item>跟随系统</item>
+        <item>浅色</item>
+        <item>深色</item>
+    </string-array>
+
+    <!-- 顺序需与 SnippetsApp.COLOR_THEME_RESOURCES 中的样式一一对应 -->
+    <string-array name="palette_names">
+        <item>蓝</item>
+        <item>绿</item>
+        <item>紫</item>
+        <item>青</item>
+        <item>橙</item>
+        <item>粉</item>
+    </string-array>
+</resources>

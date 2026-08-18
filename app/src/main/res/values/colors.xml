@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主题品牌色（建议沿用启动图标蓝） -->
+    <color name="brand">#1976D2</color>
+    <color name="brand_container">#BBDEFB</color>
+    <color name="on_primary">#FFFFFF</color>
+
+    <!-- 滑动手势提示背景色：右滑编辑=绿，左滑删除=红 -->
+    <color name="swipe_edit_bg">#43A047</color>
+    <color name="swipe_delete_bg">#E53935</color>
+
+    <!-- 可选配色方案（蓝为默认，沿用 brand；此处仅定义其余五色） -->
+    <color name="palette_green">#2E7D32</color>
+    <color name="palette_green_container">#C8E6C9</color>
+    <color name="palette_green_on">#FFFFFF</color>
+    <color name="palette_purple">#7B1FA2</color>
+    <color name="palette_purple_container">#E1BEE7</color>
+    <color name="palette_purple_on">#FFFFFF</color>
+    <color name="palette_teal">#00897B</color>
+    <color name="palette_teal_container">#B2DFDB</color>
+    <color name="palette_teal_on">#FFFFFF</color>
+    <color name="palette_orange">#EF6C00</color>
+    <color name="palette_orange_container">#FFE0B2</color>
+    <color name="palette_orange_on">#FFFFFF</color>
+    <color name="palette_pink">#C2185B</color>
+    <color name="palette_pink_container">#F8BBD0</color>
+    <color name="palette_pink_on">#FFFFFF</color>
+
+    <!-- 部件配色（浅色） -->
+    <color name="widget_background">#F2FFFFFF</color>
+    <color name="widget_text">#202124</color>
+    <color name="format_color_button">#D32F2F</color>
+    <color name="format_highlight_button">#F9A825</color>
+    <color name="ic_launcher_background">#1976D2</color>
+</resources>

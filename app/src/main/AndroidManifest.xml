@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- No permissions at all: fully offline app. -->
+
+    <application
+        android:name=".SnippetsApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Snippets">
+
+        <!-- Launcher activity: must be exported so the launcher can start it. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".EditorActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Transparent activity that only writes the clipboard and finishes.
+             Launched via PendingIntent from our own widget, so not exported. -->
+        <activity
+            android:name=".CopyNoteActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Snippets.Transparent" />
+
+        <!-- Same trampoline pattern for template widgets: reads the clipboard,
+             fills the template's slot, copies the result back. -->
+        <activity
+            android:name=".FillTemplateActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Snippets.Transparent" />
+
+        <!-- Widget configuration activity. The system launches it on the app's
+             behalf when a widget is placed, so it does not need to be exported. -->
+        <activity
+            android:name=".widget.WidgetConfigActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".widget.SnippetsWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/snippet_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TemplateWidgetProvider"
+            android:exported="true"
+            android:label="@string/template_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/template_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TemplateCopyWidgetProvider"
+            android:exported="true"
+            android:label="@string/template_copy_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/template_copy_widget_info" />
+        </receiver>
+
+    </application>
+
+</manifest>
