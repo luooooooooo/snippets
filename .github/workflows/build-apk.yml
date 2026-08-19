@@ -17,6 +17,7 @@ on:
 
 env:
   ANDROID_HOME: ${{ github.workspace }}/android-sdk
+  ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
 
 jobs:
   build:
@@ -41,37 +42,34 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Install Android SDK
+      - name: Set up Android SDK
         run: |
-          echo "Installing Android SDK command-line tools..."
+          mkdir -p $ANDROID_HOME
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "Installing cmdline-tools..."
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip -O /tmp/cmdtools.zip
           unzip -q /tmp/cmdtools.zip -d /tmp
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          mv /tmp/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-          echo "Installing SDK packages..."
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
-            "platform-tools" "platforms;android-36" "build-tools;36.0.0"
-          echo "Android SDK setup complete."
-
-      - name: Create local.properties
-        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+          mv /tmp/cmdline-tools $ANDROID_HOME/cmdline-tools
+          echo "Accepting SDK licenses..."
+          yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses > /dev/null 2>&1 || true
+          echo "SDK setup done."
 
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Decode keystore (release only)
+      - name: Decode keystore
         if: matrix.build_type == 'release'
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           if [ -n "${KEYSTORE_BASE64}" ]; then
             echo "${KEYSTORE_BASE64}" | base64 -d > snippets-release-key.jks
-            echo "Keystore decoded successfully"
+            echo "Keystore decoded"
           else
-            echo "KEYSTORE_BASE64 not set, will use debug signing"
+            echo "No keystore, will use debug signing"
           fi
 
-      - name: Build APK
+      - name: Build ${{ matrix.build_type }} APK
         env:
           STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -88,7 +86,7 @@ jobs:
             ./gradlew assemble${{ matrix.build_type == 'release' && 'Release' || 'Debug' }}
           fi
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: apk-${{ matrix.build_type }}
