@@ -35,4 +35,12 @@
         <item>橙</item>
         <item>粉</item>
     </string-array>
+
+    <!-- 顺序需与 MainActivity 中的排序常量一一对应（0=名称A→Z,1=名称Z→A,2=使用最多,3=最近添加） -->
+    <string-array name="tag_sort_names">
+        <item>名称 A→Z</item>
+        <item>名称 Z→A</item>
+        <item>使用最多</item>
+        <item>最近添加</item>
+    </string-array>
 </resources>

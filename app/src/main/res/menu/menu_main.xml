@@ -29,4 +29,10 @@
         android:title="@string/import_backup"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort"
+        android:title="@string/sort_tags"
+        app:showAsAction="ifRoom" />
+
 </menu>

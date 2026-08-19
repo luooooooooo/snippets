@@ -1,5 +1,6 @@
 package com.kvelzer.snippets
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -12,6 +13,8 @@ import android.view.View
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import java.text.Collator
+import java.util.Locale
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import androidx.activity.result.contract.ActivityResultContracts
@@ -255,6 +258,10 @@ class MainActivity : AppCompatActivity() {
             pickColorTheme()
             true
         }
+        R.id.action_sort -> {
+            showSortDialog()
+            true
+        }
         R.id.action_export -> {
             exportLauncher.launch(defaultBackupName())
             true
@@ -345,7 +352,7 @@ class MainActivity : AppCompatActivity() {
         }
         tagBar.addView(allChip)
 
-        for (tag in TagStore.all(context)) {
+        for (tag in sortTags(context, TagStore.all(context), SnippetsApp.getTagSort(context))) {
             val chip = Chip(context).apply {
                 text = tag
                 isCheckable = true
@@ -550,7 +557,55 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /** 排序对话框：单选列表，预选当前排序方式，确认后持久化并重建标签栏。 */
+    private fun showSortDialog() {
+        val names = resources.getStringArray(R.array.tag_sort_names)
+        val current = SnippetsApp.getTagSort(this).coerceIn(0, names.lastIndex)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.sort_tags)
+            .setSingleChoiceItems(names, current) { dialog, which ->
+                SnippetsApp.setTagSort(this, which)
+                buildTagBar()
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /** 按指定模式对标签排序；「全部」与「+」由调用方固定，不参与排序。 */
+    private fun sortTags(context: Context, tags: List<String>, mode: Int): List<String> {
+        return when (mode) {
+            SORT_NAME_ASC -> tags.sortedWith(chineseCollator)
+            SORT_NAME_DESC -> tags.sortedWith(chineseCollator.reversed())
+            SORT_USAGE -> {
+                val counts = usageCounts(context)
+                // 使用次数降序；次数相同则按名称稳定排序，保证顺序可预期。
+                tags.sortedWith(compareByDescending<String> { counts[it] ?: 0 }.thenBy(chineseCollator, { it }))
+            }
+            SORT_RECENT -> tags.reversed() // 标签库按创建顺序存储，反转即「最近添加」在前
+            else -> tags
+        }
+    }
+
+    /** 统计每个标签被多少条笔记（片段 + 模板）引用，用于「使用最多」排序。 */
+    private fun usageCounts(context: Context): Map<String, Int> {
+        val counts = mutableMapOf<String, Int>()
+        for (note in NoteStore.all(context) + TemplateStore.all(context)) {
+            for (tag in note.tags) counts[tag] = (counts[tag] ?: 0) + 1
+        }
+        return counts
+    }
+
     companion object {
         private const val KEY_TAB = "templates_tab"
+
+        // 标签排序方式，顺序须与 R.array.tag_sort_names 及 SnippetsApp 默认值一致。
+        private const val SORT_NAME_ASC = 0   // 名称 A→Z（拼音）
+        private const val SORT_NAME_DESC = 1  // 名称 Z→A
+        private const val SORT_USAGE = 2      // 使用最多（引用该标签的笔记数）
+        private const val SORT_RECENT = 3     // 最近添加（按创建顺序倒序）
+
+        // 中文排序器：按拼音而非 Unicode 码位排序，更贴合中文用户预期。
+        private val chineseCollator: Collator = Collator.getInstance(Locale.CHINESE)
     }
 }

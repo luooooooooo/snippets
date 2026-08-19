@@ -15,6 +15,7 @@ class SnippetsApp : Application() {
         private const val PREFS = "settings"
         private const val KEY_THEME = "theme_mode"
         private const val KEY_COLOR = "color_theme_index"
+        private const val KEY_TAG_SORT = "tag_sort_mode"
 
         // 配色方案对应的主题样式，顺序需与 R.array.palette_names 一致：
         // 蓝 / 绿 / 紫 / 青 / 橙 / 粉（索引 0 = 蓝，即默认）。
@@ -43,6 +44,14 @@ class SnippetsApp : Application() {
 
         fun setColorTheme(context: Context, index: Int) {
             context.getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_COLOR, index).apply()
+        }
+
+        /** 标签栏排序方式（0=名称A→Z,1=名称Z→A,2=使用最多,3=最近添加）。默认 0。 */
+        fun getTagSort(context: Context): Int =
+            context.getSharedPreferences(PREFS, MODE_PRIVATE).getInt(KEY_TAG_SORT, 0)
+
+        fun setTagSort(context: Context, mode: Int) {
+            context.getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_TAG_SORT, mode).apply()
         }
 
         /** 在 Activity.onCreate 中、setContentView 之前调用，按已保存的配色切换主题。 */

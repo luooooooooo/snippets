@@ -44,6 +44,7 @@
     <string name="delete_tag">删除标签</string>
     <string name="delete_tag_message">删除标签「%1$s」？该标签将从所有笔记中移除。</string>
     <string name="tag_exists">该标签已存在</string>
+    <string name="sort_tags">排序方式</string>
 
     <string name="search">搜索</string>
     <string name="search_hint">搜索片段…</string>
