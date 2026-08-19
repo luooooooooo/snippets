@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ['v*', 'V*']
   workflow_dispatch:
     inputs:
       build_type:
@@ -35,10 +35,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Install Android SDK
@@ -96,7 +96,7 @@ jobs:
 
   release:
     name: Create GitHub Release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/V')
     needs: build
     runs-on: ubuntu-latest
     permissions:
