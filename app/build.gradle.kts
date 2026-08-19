@@ -30,7 +30,11 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (providers.gradleProperty("SNIPPETS_STORE_FILE").orNull != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 

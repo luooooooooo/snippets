@@ -3,6 +3,10 @@
 build/
 local.properties
 
+# Signing keys
+*.jks
+*.keystore
+
 # IntelliJ / Android Studio
 *.iml
 .idea/
