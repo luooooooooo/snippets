@@ -15,9 +15,6 @@ on:
           - debug
           - release
 
-env:
-  ANDROID_HOME: ${{ github.workspace }}/android-sdk
-
 jobs:
   build-debug:
     name: Build Debug APK
@@ -36,14 +33,13 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Android SDK
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq wget unzip
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip -O /tmp/cmdtools.zip
-          unzip -q /tmp/cmdtools.zip -d /tmp
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          mv /tmp/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
-            "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '13114758'
+          accept-android-sdk-licenses: true
+          packages: |
+            platforms;android-36
+            platform-tools
 
       - name: Make gradlew executable
         run: chmod +x gradlew
@@ -74,14 +70,13 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Android SDK
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq wget unzip
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip -O /tmp/cmdtools.zip
-          unzip -q /tmp/cmdtools.zip -d /tmp
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          mv /tmp/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
-            "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '13114758'
+          accept-android-sdk-licenses: true
+          packages: |
+            platforms;android-36
+            platform-tools
 
       - name: Make gradlew executable
         run: chmod +x gradlew
