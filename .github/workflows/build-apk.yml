@@ -103,12 +103,6 @@ jobs:
 
             Fork 版本更新，基于 [kvelzer/snippets](https://github.com/kvelzer/snippets) 修改。
 
-            ### 主要改动
-            - 标签排序功能
-            - 中文化界面
-            - 多配色主题
-            - 手势交互优化
-
-            查看完整改动请访问 [Repository](https://github.com/${{ github.repository }}).
+            完整更新日志请查看 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)。
           files: |
             release-assets/*.apk
