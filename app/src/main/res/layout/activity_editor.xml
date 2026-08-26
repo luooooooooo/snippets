@@ -25,7 +25,7 @@
         android:textAppearance="?attr/textAppearanceTitleLarge"
         android:importantForAutofill="no" />
 
-    <!-- 标签栏：显示该笔记已选标签，点击进入多选/新建对话框。 -->
+    <!-- 标签栏 -->
     <LinearLayout
         android:id="@+id/tag_row"
         android:layout_width="match_parent"
@@ -33,38 +33,65 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="8dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:background="?attr/selectableItemBackground"
-        android:visibility="gone">
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp">
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/edit_tags"
+        <!-- 标签点击区域（涟漪仅在此范围内） -->
+        <LinearLayout
+            android:id="@+id/tag_click_area"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:visibility="gone" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
 
-        <TextView
-            android:id="@+id/tag_hint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/add_tags"
-            android:textColor="?android:attr/textColorSecondary"
-            android:textSize="13sp" />
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/edit_tags"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
 
-        <TextView
+            <TextView
+                android:id="@+id/tag_hint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/add_tags"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/edit_tags"
+                android:textColor="?attr/colorPrimary"
+                android:textSize="13sp"
+                android:paddingStart="4dp" />
+
+        </LinearLayout>
+
+        <!-- 富文本 / Markdown 模式切换 -->
+        <Button
+            android:id="@+id/button_mode_toggle"
+            style="?attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/edit_tags"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="13sp" />
+            android:layout_height="36dp"
+            android:minWidth="0dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/markdown_mode"
+            android:textSize="12sp"
+            android:textColor="?attr/colorPrimary" />
 
     </LinearLayout>
 
+    <!-- ===== HTML 富文本工具栏 ===== -->
     <HorizontalScrollView
         android:id="@+id/format_bar"
         android:layout_width="match_parent"
@@ -181,6 +208,83 @@
                 android:text="@string/format_redo"
                 android:textSize="18sp" />
 
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:background="?android:attr/listDivider" />
+
+            <Button
+                android:id="@+id/button_heading"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="@string/format_heading"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/button_quote"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="@string/format_quote"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/button_code"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="@string/format_code"
+                android:textSize="14sp"
+                android:typeface="monospace" />
+
+            <Button
+                android:id="@+id/button_hr"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="@string/format_hr"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:background="?android:attr/listDivider" />
+
+            <Button
+                android:id="@+id/button_align_left"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="@string/format_align_left"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/button_align_center"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="@string/format_align_center"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/button_align_right"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="@string/format_align_right"
+                android:textSize="16sp" />
+
             <Button
                 android:id="@+id/button_slot"
                 style="?attr/borderlessButtonStyle"
@@ -194,6 +298,186 @@
         </LinearLayout>
     </HorizontalScrollView>
 
+    <!-- ===== Markdown 工具栏 ===== -->
+    <HorizontalScrollView
+        android:id="@+id/format_bar_markdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <Button
+                android:id="@+id/md_heading"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="H"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/md_bold"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="B"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/md_italic"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="I"
+                android:textSize="16sp"
+                android:textStyle="italic" />
+
+            <Button
+                android:id="@+id/md_strike"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="S"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/md_inline_code"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="`"
+                android:textSize="18sp"
+                android:typeface="monospace" />
+
+            <Button
+                android:id="@+id/md_code_block"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="{ }"
+                android:textSize="14sp"
+                android:typeface="monospace" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:background="?android:attr/listDivider" />
+
+            <Button
+                android:id="@+id/md_quote"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="❝"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/md_ul"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="•"
+                android:textSize="20sp" />
+
+            <Button
+                android:id="@+id/md_ol"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="1."
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/md_task"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="☐"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:background="?android:attr/listDivider" />
+
+            <Button
+                android:id="@+id/md_link"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="🔗"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/md_image"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="🖼"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/md_table"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="⊞"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/md_hr"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:text="—"
+                android:textSize="20sp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center_vertical"
+                android:background="?android:attr/listDivider" />
+
+            <Button
+                android:id="@+id/md_preview"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:text="@string/markdown_preview"
+                android:textSize="13sp"
+                android:textColor="?attr/colorPrimary" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- 模板填充栏 -->
     <LinearLayout
         android:id="@+id/fill_bar"
         android:layout_width="match_parent"
@@ -228,12 +512,14 @@
         android:layout_height="1dp"
         android:background="?android:attr/listDivider" />
 
+    <!-- HTML 可视化编辑器 -->
     <WebView
         android:id="@+id/edit_body"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <!-- HTML 源码编辑 -->
     <EditText
         android:id="@+id/edit_source"
         android:layout_width="match_parent"
@@ -247,5 +533,30 @@
         android:textSize="13sp"
         android:visibility="gone"
         android:importantForAutofill="no" />
+
+    <!-- Markdown 源码编辑 -->
+    <EditText
+        android:id="@+id/edit_markdown"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp"
+        android:background="@null"
+        android:gravity="top|start"
+        android:inputType="textMultiLine|textNoSuggestions"
+        android:typeface="monospace"
+        android:textSize="14sp"
+        android:lineSpacingExtra="4dp"
+        android:visibility="gone"
+        android:hint="@string/markdown_hint"
+        android:importantForAutofill="no" />
+
+    <!-- Markdown 预览 WebView -->
+    <WebView
+        android:id="@+id/markdown_preview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="gone" />
 
 </LinearLayout>

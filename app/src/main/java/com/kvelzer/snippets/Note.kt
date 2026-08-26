@@ -7,6 +7,8 @@ package com.kvelzer.snippets
  * by NoteStore and never derived from timestamps.
  * [tags] are free-form category labels (multi-select) used for filtering on the
  * main list; each note may belong to several tags.
+ * [useCount] tracks how many times the note was copied, for "most used" sorting.
+ * [lastUsedAt] is the epoch millis of the last copy, for "recently used" sorting.
  */
 data class Note(
     val id: Long,
@@ -15,4 +17,6 @@ data class Note(
     val updatedAt: Long,
     val sortOrder: Int = 0,
     val tags: List<String> = emptyList(),
+    val useCount: Int = 0,
+    val lastUsedAt: Long = 0,
 )

@@ -52,7 +52,7 @@ class CopyNoteActivity : Activity() {
                 SnippetsWidgetProvider.updateAllWidgets(this)
             }
         } else {
-            ClipboardHelper.copyNote(this, note)
+            ClipboardHelper.copyNote(this, note, isTemplate = isTemplate)
             ClipboardHelper.showCopiedFeedback(this)
         }
         finish()

@@ -22,7 +22,7 @@ object Backup {
 
     fun export(context: Context, uri: Uri) {
         val payload = JSONObject()
-            .put("version", 1)
+            .put("version", 2)
             .put("notes", toArray(NoteStore.all(context)))
             .put("templates", toArray(TemplateStore.all(context)))
             .toString()
@@ -56,6 +56,8 @@ object Backup {
                     .put("html", n.html)
                     .put("updatedAt", n.updatedAt)
                     .put("tags", tagArr)
+                    .put("useCount", n.useCount)
+                    .put("lastUsedAt", n.lastUsedAt)
             )
         }
         return array
@@ -75,6 +77,8 @@ object Backup {
                     tags = o.optJSONArray("tags")?.let { arr ->
                         (0 until arr.length()).map { arr.getString(it) }
                     } ?: emptyList(),
+                    useCount = o.optInt("useCount", 0),
+                    lastUsedAt = o.optLong("lastUsedAt", 0),
                 )
             )
         }

@@ -10,6 +10,22 @@
         app:showAsAction="ifRoom|collapseActionView" />
 
     <item
+        android:id="@+id/action_select"
+        android:title="@string/action_select"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_sort_tags"
+        android:icon="@drawable/ic_sort"
+        android:title="@string/sort_tags"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_sort_list"
+        android:title="@string/sort_list"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_theme"
         android:title="@string/theme"
         app:showAsAction="never" />
@@ -20,8 +36,18 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_trash"
+        android:title="@string/trash"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_export"
         android:title="@string/export_backup"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_export_md"
+        android:title="@string/export_all_markdown"
         app:showAsAction="never" />
 
     <item
@@ -30,9 +56,13 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_sort"
-        android:icon="@drawable/ic_sort"
-        android:title="@string/sort_tags"
-        app:showAsAction="ifRoom" />
+        android:id="@+id/action_import_md"
+        android:title="@string/import_markdown"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_auto_backup"
+        android:title="@string/auto_backup"
+        app:showAsAction="never" />
 
 </menu>

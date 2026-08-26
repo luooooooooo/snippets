@@ -3,10 +3,13 @@ package com.kvelzer.snippets
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.TextView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
 class NotesAdapter(
@@ -14,46 +17,73 @@ class NotesAdapter(
     private val onCopy: (Note) -> Unit,
     private val onDeleteRequest: (Note) -> Unit,
     private val onFill: (Note) -> Unit,
-) : RecyclerView.Adapter<NotesAdapter.Holder>() {
+    private val onSelectionChanged: (Set<Long>) -> Unit = {},
+) : ListAdapter<Note, NotesAdapter.Holder>(NoteDiffCallback()) {
 
     /** Templates tab shows the fill-from-clipboard button on each row. */
     var showFillButton = false
 
-    private val notes = mutableListOf<Note>()
+    /** Multi-select mode: when true, checkboxes are visible and taps toggle. */
+    var selectionMode = false
+        set(value) {
+            field = value
+            if (!value) selectedIds.clear()
+            notifyDataSetChanged()
+        }
+
+    private val selectedIds = mutableSetOf<Long>()
+
+    fun isSelected(id: Long) = id in selectedIds
+
+    fun toggleSelection(id: Long) {
+        if (selectedIds.contains(id)) selectedIds.remove(id) else selectedIds.add(id)
+        onSelectionChanged(selectedIds.toSet())
+        notifyItemChanged(currentList.indexOfFirst { it.id == id })
+    }
+
+    fun selectAll() {
+        selectedIds.clear()
+        selectedIds.addAll(currentList.map { it.id })
+        onSelectionChanged(selectedIds.toSet())
+        notifyDataSetChanged()
+    }
+
+    fun clearSelection() {
+        selectedIds.clear()
+        onSelectionChanged(emptySet())
+        notifyDataSetChanged()
+    }
+
+    fun getSelected(): List<Note> = currentList.filter { it.id in selectedIds }
 
     // Deriving the preview parses HTML; cache it per note, keyed by updatedAt
     // so an edit invalidates the entry.
     private val previewCache = HashMap<Long, Pair<Long, String>>()
 
-    fun submit(newNotes: List<Note>) {
-        notes.clear()
-        notes.addAll(newNotes)
-        previewCache.keys.retainAll(newNotes.map { it.id }.toSet())
-        notifyDataSetChanged()
-    }
-
     /** Reorders in response to a drag; the caller persists via [noteIds] on drop. */
     fun moveItem(from: Int, to: Int) {
-        if (from == to || from !in notes.indices || to !in notes.indices) return
+        if (from == to || from !in currentList.indices || to !in currentList.indices) return
+        val newList = currentList.toMutableList()
         // ItemTouchHelper can report a jump of more than one position on a fast
         // drag; a swap would leave the passed-over items misplaced, a move won't.
-        notes.add(to, notes.removeAt(from))
-        notifyItemMoved(from, to)
+        newList.add(to, newList.removeAt(from))
+        submitList(newList)
     }
 
-    fun noteIds(): List<Long> = notes.map { it.id }
+    fun noteIds(): List<Long> = currentList.map { it.id }
 
     /** Returns the note at a visible position, or null if out of range. */
-    fun noteAt(position: Int): Note? = notes.getOrNull(position)
+    fun noteAt(position: Int): Note? = currentList.getOrNull(position)
 
     /**
      * 滑动删除时先把条目移出列表（让 ItemTouchHelper 与界面状态一致）；
      * 用户取消删除时由调用方 refresh() 从存储重新加载恢复。
      */
     fun removeAt(position: Int) {
-        if (position !in notes.indices) return
-        notes.removeAt(position)
-        notifyItemRemoved(position)
+        if (position !in currentList.indices) return
+        val newList = currentList.toMutableList()
+        newList.removeAt(position)
+        submitList(newList)
     }
 
     private fun previewFor(note: Note): String {
@@ -70,10 +100,8 @@ class NotesAdapter(
         return Holder(view)
     }
 
-    override fun getItemCount() = notes.size
-
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        holder.bind(notes[position])
+        holder.bind(getItem(position))
     }
 
     inner class Holder(view: View) : RecyclerView.ViewHolder(view) {
@@ -81,14 +109,23 @@ class NotesAdapter(
         private val preview: TextView = view.findViewById(R.id.note_preview)
         private val fillButton: ImageButton = view.findViewById(R.id.button_fill)
         private val tagsGroup: ChipGroup = view.findViewById(R.id.note_tags)
+        private val checkBox: CheckBox = view.findViewById(R.id.note_check)
 
         fun bind(note: Note) {
             val context = itemView.context
             title.text = note.title.ifBlank { context.getString(R.string.untitled) }
             preview.text = previewFor(note)
-            // 点按整行 = 复制（带格式）；编辑/删除改由左右滑动触发。
-            itemView.setOnClickListener { onCopy(note) }
-            fillButton.visibility = if (showFillButton) View.VISIBLE else View.GONE
+
+            // 多选模式：显示复选框，点按切换选中；普通模式：点按整行 = 复制。
+            checkBox.visibility = if (selectionMode) View.VISIBLE else View.GONE
+            checkBox.isChecked = note.id in selectedIds
+            if (selectionMode) {
+                itemView.setOnClickListener { toggleSelection(note.id) }
+            } else {
+                itemView.setOnClickListener { onCopy(note) }
+            }
+
+            fillButton.visibility = if (showFillButton && !selectionMode) View.VISIBLE else View.GONE
             fillButton.setOnClickListener { onFill(note) }
 
             // 渲染该笔记归属的标签（只读、不可点击）。
@@ -108,5 +145,10 @@ class NotesAdapter(
                 }
             }
         }
+    }
+
+    class NoteDiffCallback : DiffUtil.ItemCallback<Note>() {
+        override fun areItemsTheSame(oldItem: Note, newItem: Note) = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Note, newItem: Note) = oldItem == newItem
     }
 }

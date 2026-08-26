@@ -13,11 +13,19 @@ object ClipboardHelper {
      * edited comes back out unchanged. ClipData.newHtmlText is what makes
      * rich paste targets (Gmail's composer) receive formatting — newPlainText
      * would silently drop it.
+     *
+     * When [recordUsage] is true and the note has a real id, increments
+     * useCount and lastUsedAt on the correct store for "most/recent used"
+     * sorting.
      */
-    fun copyNote(context: Context, note: Note) {
+    fun copyNote(context: Context, note: Note, isTemplate: Boolean = false, recordUsage: Boolean = true) {
         val plain = HtmlConverter.plainText(note.html)
         val clipboard = context.getSystemService(ClipboardManager::class.java)
         clipboard.setPrimaryClip(ClipData.newHtmlText(note.title.ifBlank { "Snippet" }, plain, note.html))
+        if (recordUsage && note.id != 0L) {
+            val store = if (isTemplate) TemplateStore else NoteStore
+            store.recordUse(context, note.id)
+        }
     }
 
     /**

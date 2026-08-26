@@ -39,6 +39,7 @@ open class JsonNoteStore(private val fileName: String) {
     /** Insert (id == 0, lands on top of the list) or update (keeps its position). */
     fun save(context: Context, note: Note): Note = synchronized(lock) {
         val notes = load(context)
+        val existing = notes.find { it.id == note.id }
         val stored = if (note.id == 0L) {
             note.copy(
                 id = (notes.maxOfOrNull { it.id } ?: 0L) + 1,
@@ -46,17 +47,31 @@ open class JsonNoteStore(private val fileName: String) {
                 sortOrder = (notes.minOfOrNull { it.sortOrder } ?: 1) - 1,
             )
         } else {
-            val existing = notes.find { it.id == note.id }
             notes.removeAll { it.id == note.id }
             note.copy(
                 updatedAt = System.currentTimeMillis(),
                 sortOrder = existing?.sortOrder
                     ?: ((notes.minOfOrNull { it.sortOrder } ?: 1) - 1),
+                // Preserve usage stats across edits unless the caller set them.
+                useCount = if (note.useCount == 0 && existing != null) existing.useCount else note.useCount,
+                lastUsedAt = if (note.lastUsedAt == 0L && existing != null) existing.lastUsedAt else note.lastUsedAt,
             )
         }
         notes.add(stored)
         persist(context, notes)
         stored
+    }
+
+    /** Increment useCount and lastUsedAt when a note is copied. */
+    fun recordUse(context: Context, id: Long): Note? = synchronized(lock) {
+        val notes = load(context)
+        val idx = notes.indexOfFirst { it.id == id }
+        if (idx < 0) return null
+        val now = System.currentTimeMillis()
+        val updated = notes[idx].copy(useCount = notes[idx].useCount + 1, lastUsedAt = now)
+        notes[idx] = updated
+        persist(context, notes)
+        updated
     }
 
     fun delete(context: Context, id: Long): Unit = synchronized(lock) {
@@ -120,6 +135,8 @@ open class JsonNoteStore(private val fileName: String) {
                             tags = o.optJSONArray("tags")?.let { arr ->
                                 (0 until arr.length()).map { arr.getString(it) }
                             } ?: emptyList(),
+                            useCount = o.optInt("useCount", 0),
+                            lastUsedAt = o.optLong("lastUsedAt", 0),
                         )
                     )
                 }
@@ -165,6 +182,8 @@ open class JsonNoteStore(private val fileName: String) {
                     .put("updatedAt", n.updatedAt)
                     .put("sortOrder", n.sortOrder)
                     .put("tags", tagArr)
+                    .put("useCount", n.useCount)
+                    .put("lastUsedAt", n.lastUsedAt)
             )
         }
         val payload = JSONObject().put("notes", array).toString()

@@ -2,6 +2,7 @@ package com.kvelzer.snippets
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 
 class SnippetsApp : Application() {
@@ -9,6 +10,10 @@ class SnippetsApp : Application() {
     override fun onCreate() {
         super.onCreate()
         AppCompatDelegate.setDefaultNightMode(getThemeMode(this))
+        // Re-schedule auto-backup if it was enabled before a process restart.
+        if (AutoBackupWorker.isEnabled(this)) {
+            AutoBackupWorker.schedule(this, enabled = true)
+        }
     }
 
     companion object {
@@ -16,9 +21,10 @@ class SnippetsApp : Application() {
         private const val KEY_THEME = "theme_mode"
         private const val KEY_COLOR = "color_theme_index"
         private const val KEY_TAG_SORT = "tag_sort_mode"
+        private const val KEY_LIST_SORT = "list_sort_mode"
 
         // 配色方案对应的主题样式，顺序需与 R.array.palette_names 一致：
-        // 蓝 / 绿 / 紫 / 青 / 橙 / 粉（索引 0 = 蓝，即默认）。
+        // 蓝 / 绿 / 紫 / 青 / 橙 / 粉 / 动态（索引 6，仅 Android 12+ 生效）。
         private val COLOR_THEME_RESOURCES = intArrayOf(
             R.style.Theme_Snippets,
             R.style.Theme_Snippets_Green,
@@ -26,6 +32,7 @@ class SnippetsApp : Application() {
             R.style.Theme_Snippets_Teal,
             R.style.Theme_Snippets_Orange,
             R.style.Theme_Snippets_Pink,
+            R.style.Theme_Snippets_Dynamic,
         )
 
         fun getThemeMode(context: Context): Int =
@@ -54,9 +61,21 @@ class SnippetsApp : Application() {
             context.getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_TAG_SORT, mode).apply()
         }
 
+        /** 列表排序方式（0=手动,1=最近使用,2=最常使用,3=名称A→Z,4=名称Z→A）。默认 0。 */
+        fun getListSort(context: Context): Int =
+            context.getSharedPreferences(PREFS, MODE_PRIVATE).getInt(KEY_LIST_SORT, 0)
+
+        fun setListSort(context: Context, mode: Int) {
+            context.getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_LIST_SORT, mode).apply()
+        }
+
         /** 在 Activity.onCreate 中、setContentView 之前调用，按已保存的配色切换主题。 */
         fun applyColorTheme(context: Context) {
-            val index = getColorTheme(context).coerceIn(0, COLOR_THEME_RESOURCES.lastIndex)
+            var index = getColorTheme(context).coerceIn(0, COLOR_THEME_RESOURCES.lastIndex)
+            // 动态颜色仅 Android 12+ 支持；低版本回退到默认蓝色。
+            if (index == 6 && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                index = 0
+            }
             context.setTheme(COLOR_THEME_RESOURCES[index])
         }
     }

@@ -15,6 +15,16 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_export_md"
+        android:title="@string/export_markdown"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_export_text"
+        android:title="@string/export_plain_text"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_source"
         android:title="@string/edit_source"
         app:showAsAction="never" />

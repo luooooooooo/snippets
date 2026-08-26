@@ -19,16 +19,32 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
+        <!-- Editor: exported to receive share intents and static shortcut. -->
         <activity
             android:name=".EditorActivity"
-            android:exported="false"
+            android:exported="true"
             android:parentActivityName=".MainActivity"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/markdown" />
+            </intent-filter>
+        </activity>
 
-        <!-- Transparent activity that only writes the clipboard and finishes.
-             Launched via PendingIntent from our own widget, so not exported. -->
+        <!-- Trash (recycle bin) activity. -->
+        <activity
+            android:name=".TrashActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- Transparent activity that only writes the clipboard and finishes. -->
         <activity
             android:name=".CopyNoteActivity"
             android:exported="false"
@@ -37,8 +53,7 @@
             android:taskAffinity=""
             android:theme="@style/Theme.Snippets.Transparent" />
 
-        <!-- Same trampoline pattern for template widgets: reads the clipboard,
-             fills the template's slot, copies the result back. -->
+        <!-- Same trampoline pattern for template widgets. -->
         <activity
             android:name=".FillTemplateActivity"
             android:exported="false"
@@ -47,8 +62,7 @@
             android:taskAffinity=""
             android:theme="@style/Theme.Snippets.Transparent" />
 
-        <!-- Widget configuration activity. The system launches it on the app's
-             behalf when a widget is placed, so it does not need to be exported. -->
+        <!-- Widget configuration activity. -->
         <activity
             android:name=".widget.WidgetConfigActivity"
             android:exported="false">

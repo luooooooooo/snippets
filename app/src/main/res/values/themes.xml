@@ -76,6 +76,9 @@
         <item name="colorOnSecondaryContainer">@color/palette_pink</item>
     </style>
 
+    <!-- 动态颜色（低版本回退为默认蓝色；API 31+ 在 values-v31 中覆盖） -->
+    <style name="Theme.Snippets.Dynamic" parent="Theme.Snippets" />
+
     <!-- For CopyNoteActivity / FillTemplateActivity: draws nothing, so the widget
          tap looks like a pure "copy" action with no app opening. -->
     <style name="Theme.Snippets.Transparent" parent="Theme.Snippets">

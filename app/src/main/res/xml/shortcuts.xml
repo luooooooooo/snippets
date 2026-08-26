@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_note"
+        android:enabled="true"
+        android:icon="@drawable/ic_add"
+        android:shortcutShortLabel="@string/shortcut_new"
+        android:shortcutLongLabel="@string/new_note">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.kvelzer.snippets"
+            android:targetClass="com.kvelzer.snippets.EditorActivity" />
+    </shortcut>
+</shortcuts>
