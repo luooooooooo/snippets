@@ -19,3 +19,8 @@ Thumbs.db
 
 # WorkBuddy project data (not part of source)
 .workbuddy/
+
+# 临时调试文件
+build_log*.txt
+screenshot_feedback.png
+wechat_sample.png

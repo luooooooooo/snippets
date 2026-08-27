@@ -8,8 +8,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
 import android.util.TypedValue
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
@@ -20,6 +18,8 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
@@ -30,6 +30,8 @@ import com.kvelzer.snippets.widget.SnippetsWidgetProvider
 import com.kvelzer.snippets.widget.TemplateCopyWidgetProvider
 import com.kvelzer.snippets.widget.TemplateWidgetProvider
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class EditorActivity : AppCompatActivity() {
@@ -49,7 +51,6 @@ class EditorActivity : AppCompatActivity() {
         private val HIGHLIGHT_VALUES = arrayOf(
             "transparent", "#FFF59D", "#A5D6A7", "#90CAF9", "#F8BBD0",
         )
-        private val HEADING_TAGS = arrayOf("H1", "H2", "H3", "P")
     }
 
     private lateinit var titleEdit: EditText
@@ -58,6 +59,8 @@ class EditorActivity : AppCompatActivity() {
     private lateinit var markdownEdit: EditText
     private lateinit var previewWebView: WebView
     private lateinit var editTags: com.google.android.material.chip.ChipGroup
+    private lateinit var metaInfo: TextView
+    private lateinit var formatPanel: View
 
     private val currentTags = mutableSetOf<String>()
 
@@ -71,6 +74,7 @@ class EditorActivity : AppCompatActivity() {
     private var markdownMode = false
     private var markdownPreview = false
     private var webViewDestroyed = false
+    private var panelVisible = false
 
     private var isTemplate = false
     private val store: JsonNoteStore get() = if (isTemplate) TemplateStore else NoteStore
@@ -94,9 +98,6 @@ class EditorActivity : AppCompatActivity() {
         SnippetsApp.applyColorTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
-        setSupportActionBar(findViewById(R.id.toolbar))
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = ""
 
         titleEdit = findViewById(R.id.edit_title)
         webView = findViewById(R.id.edit_body)
@@ -104,6 +105,8 @@ class EditorActivity : AppCompatActivity() {
         markdownEdit = findViewById(R.id.edit_markdown)
         previewWebView = findViewById(R.id.markdown_preview)
         editTags = findViewById(R.id.edit_tags)
+        metaInfo = findViewById(R.id.meta_info)
+        formatPanel = findViewById(R.id.format_panel)
 
         isTemplate = intent.getBooleanExtra(EXTRA_TEMPLATE, false)
         noteId = intent.getLongExtra(EXTRA_NOTE_ID, NO_ID)
@@ -130,6 +133,7 @@ class EditorActivity : AppCompatActivity() {
             titleEdit.setText(loadedTitle)
             latestHtml = loadedHtml
         }
+        updateMetaInfo()
 
         webView.settings.javaScriptEnabled = true
         webView.setBackgroundColor(Color.TRANSPARENT)
@@ -138,7 +142,6 @@ class EditorActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView, url: String) {
                 pageReady = true
                 pushContent()
-                updateFillBar()
             }
             override fun shouldOverrideUrlLoading(
                 view: WebView, request: WebResourceRequest,
@@ -152,66 +155,63 @@ class EditorActivity : AppCompatActivity() {
             }
         }
         webView.loadUrl("file:///android_asset/editor.html")
-
         previewWebView.settings.javaScriptEnabled = false
 
-        // ===== HTML 富文本工具栏 =====
-        findViewById<Button>(R.id.button_bold).setOnClickListener { exec("bold") }
-        findViewById<Button>(R.id.button_italic).setOnClickListener { exec("italic") }
-        findViewById<Button>(R.id.button_underline).setOnClickListener { exec("underline") }
-        findViewById<Button>(R.id.button_strike).apply {
+        // ===== 顶部导航栏 =====
+        findViewById<View>(R.id.btn_back).setOnClickListener {
+            saveIfMeaningful()
+            finish()
+        }
+        findViewById<View>(R.id.btn_undo).setOnClickListener { exec("undo") }
+        findViewById<View>(R.id.btn_redo).setOnClickListener { exec("redo") }
+        findViewById<View>(R.id.btn_more).setOnClickListener { showMoreMenu(it) }
+        findViewById<View>(R.id.btn_done).setOnClickListener {
+            saveIfMeaningful()
+            finish()
+        }
+
+        // ===== 标签行 =====
+        findViewById<View>(R.id.tag_click_area).setOnClickListener { pickTags() }
+        findViewById<TextView>(R.id.button_mode_toggle).setOnClickListener {
+            if (markdownMode) switchToRichText() else switchToMarkdown()
+        }
+        findViewById<TextView>(R.id.button_format_inline).setOnClickListener { autoFormat() }
+
+        // ===== 底部工具栏 =====
+        findViewById<View>(R.id.btn_task).setOnClickListener { insertTask() }
+        findViewById<View>(R.id.btn_format_panel).setOnClickListener { toggleFormatPanel() }
+
+        // ===== 格式面板 - 标题级别 =====
+        findViewById<Button>(R.id.fmt_h1).setOnClickListener { exec("formatBlock", "H1") }
+        findViewById<Button>(R.id.fmt_h2).setOnClickListener { exec("formatBlock", "H2") }
+        findViewById<Button>(R.id.fmt_h3).setOnClickListener { exec("formatBlock", "H3") }
+        findViewById<Button>(R.id.fmt_body).setOnClickListener { exec("formatBlock", "P") }
+        findViewById<Button>(R.id.fmt_quote).setOnClickListener { exec("formatBlock", "blockquote") }
+        findViewById<Button>(R.id.fmt_code_block).setOnClickListener { exec("formatBlock", "pre") }
+
+        // ===== 格式面板 - 行内格式 =====
+        findViewById<Button>(R.id.fmt_bold).setOnClickListener { exec("bold") }
+        findViewById<Button>(R.id.fmt_italic).setOnClickListener { exec("italic") }
+        findViewById<Button>(R.id.fmt_strike).apply {
             paintFlags = paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
             setOnClickListener { exec("strikeThrough") }
         }
-        findViewById<Button>(R.id.button_color).setOnClickListener { pickColor() }
-        findViewById<Button>(R.id.button_highlight).setOnClickListener { pickHighlight() }
-        findViewById<Button>(R.id.button_bullets).setOnClickListener { exec("insertUnorderedList") }
-        findViewById<Button>(R.id.button_numbers).setOnClickListener { exec("insertOrderedList") }
-        findViewById<Button>(R.id.button_link).setOnClickListener { pickLink() }
-        findViewById<Button>(R.id.button_undo).setOnClickListener { exec("undo") }
-        findViewById<Button>(R.id.button_redo).setOnClickListener { exec("redo") }
-        findViewById<Button>(R.id.button_heading).setOnClickListener { pickHeading() }
-        findViewById<Button>(R.id.button_quote).setOnClickListener { exec("formatBlock", "blockquote") }
-        findViewById<Button>(R.id.button_code).setOnClickListener { exec("formatBlock", "pre") }
-        findViewById<Button>(R.id.button_hr).setOnClickListener { exec("insertHorizontalRule", raw = true) }
-        findViewById<Button>(R.id.button_align_left).setOnClickListener { exec("justifyLeft") }
-        findViewById<Button>(R.id.button_align_center).setOnClickListener { exec("justifyCenter") }
-        findViewById<Button>(R.id.button_align_right).setOnClickListener { exec("justifyRight") }
-        findViewById<Button>(R.id.button_slot).apply {
-            visibility = if (isTemplate) View.VISIBLE else View.GONE
-            setOnClickListener { exec("toggleSlot", raw = true) }
+        findViewById<Button>(R.id.fmt_underline).apply {
+            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            setOnClickListener { exec("underline") }
         }
-        findViewById<Button>(R.id.button_fill_apply).setOnClickListener { applyFillValue() }
-        findViewById<Button>(R.id.button_mode_toggle).setOnClickListener {
-            if (markdownMode) switchToRichText() else switchToMarkdown()
-        }
+        findViewById<Button>(R.id.fmt_highlight).setOnClickListener { pickHighlight() }
+        findViewById<Button>(R.id.fmt_color).setOnClickListener { pickColor() }
 
-        // ===== Markdown 工具栏 =====
-        findViewById<Button>(R.id.md_heading).setOnClickListener { MarkdownEditorHelper.toggleHeading(markdownEdit) }
-        findViewById<Button>(R.id.md_bold).setOnClickListener { MarkdownEditorHelper.wrap(markdownEdit, "**", "**", "粗体文字") }
-        findViewById<Button>(R.id.md_italic).setOnClickListener { MarkdownEditorHelper.wrap(markdownEdit, "*", "*", "斜体文字") }
-        findViewById<Button>(R.id.md_strike).apply {
-            paintFlags = paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-            setOnClickListener { MarkdownEditorHelper.wrap(markdownEdit, "~~", "~~", "删除线") }
-        }
-        findViewById<Button>(R.id.md_inline_code).setOnClickListener { MarkdownEditorHelper.wrap(markdownEdit, "`", "`", "代码") }
-        findViewById<Button>(R.id.md_code_block).setOnClickListener { MarkdownEditorHelper.insertCodeBlock(markdownEdit) }
-        findViewById<Button>(R.id.md_quote).setOnClickListener { MarkdownEditorHelper.prependLines(markdownEdit, "> ") }
-        findViewById<Button>(R.id.md_ul).setOnClickListener { MarkdownEditorHelper.prependLines(markdownEdit, "- ") }
-        findViewById<Button>(R.id.md_ol).setOnClickListener { MarkdownEditorHelper.prependLines(markdownEdit, "1. ") }
-        findViewById<Button>(R.id.md_task).setOnClickListener { MarkdownEditorHelper.toggleTask(markdownEdit) }
-        findViewById<Button>(R.id.md_link).setOnClickListener { pickMarkdownLink() }
-        findViewById<Button>(R.id.md_image).setOnClickListener { pickMarkdownImage() }
-        findViewById<Button>(R.id.md_table).setOnClickListener { MarkdownEditorHelper.insertTable(markdownEdit) }
-        findViewById<Button>(R.id.md_hr).setOnClickListener { MarkdownEditorHelper.insertHr(markdownEdit) }
-        findViewById<Button>(R.id.md_preview).setOnClickListener { toggleMarkdownPreview() }
-
-        findViewById<View>(R.id.tag_click_area).setOnClickListener { pickTags() }
+        // ===== 格式面板 - 列表与对齐 =====
+        findViewById<Button>(R.id.fmt_ol).setOnClickListener { exec("insertOrderedList") }
+        findViewById<Button>(R.id.fmt_link).setOnClickListener { pickLink() }
+        findViewById<Button>(R.id.fmt_align_left).setOnClickListener { exec("justifyLeft") }
+        findViewById<Button>(R.id.fmt_align_center).setOnClickListener { exec("justifyCenter") }
+        findViewById<Button>(R.id.fmt_align_right).setOnClickListener { exec("justifyRight") }
 
         // 恢复模式状态
-        if (savedInstanceState?.getBoolean(KEY_SOURCE_MODE) == true) {
-            enterSourceMode()
-        }
+        if (savedInstanceState?.getBoolean(KEY_SOURCE_MODE) == true) enterSourceMode()
         if (savedInstanceState?.getBoolean(KEY_MARKDOWN_MODE) == true) {
             markdownMode = true
             applyMarkdownMode()
@@ -223,8 +223,11 @@ class EditorActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (panelVisible) {
+                    hideFormatPanel()
+                    return
+                }
                 if (markdownPreview) {
-                    // 从预览退回编辑
                     markdownPreview = false
                     applyMarkdownPreview()
                     return
@@ -267,6 +270,85 @@ class EditorActivity : AppCompatActivity() {
         return mdPatterns.any { it.containsMatchIn(text) }
     }
 
+    // ===== 元信息 =====
+
+    private fun updateMetaInfo() {
+        val date = SimpleDateFormat("yyyy/M/d HH:mm", Locale.getDefault()).format(Date())
+        val wordCount = HtmlConverter.plainText(latestHtml).length
+        metaInfo.text = "$date  |  $wordCount 字"
+    }
+
+    // ===== 更多菜单 =====
+
+    private fun showMoreMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        popup.menuInflater.inflate(R.menu.menu_editor, popup.menu)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_save -> {
+                    saveIfMeaningful()
+                    Toast.makeText(this, if (noteId == NO_ID) R.string.nothing_to_save else R.string.saved, Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.action_copy -> {
+                    saveIfMeaningful()
+                    ClipboardHelper.copyNote(this, Note(id = noteId, title = titleEdit.text.toString().trim(), html = currentHtml(), updatedAt = 0), isTemplate)
+                    ClipboardHelper.showCopiedFeedback(this)
+                    true
+                }
+                R.id.action_export_md -> {
+                    saveIfMeaningful()
+                    val name = (titleEdit.text.toString().trim().ifBlank { "snippet" }) + ".md"
+                    exportMdLauncher.launch(name)
+                    true
+                }
+                R.id.action_export_text -> {
+                    saveIfMeaningful()
+                    val name = (titleEdit.text.toString().trim().ifBlank { "snippet" }) + ".txt"
+                    exportTextLauncher.launch(name)
+                    true
+                }
+                R.id.action_source -> {
+                    if (sourceMode) leaveSourceMode() else enterSourceMode()
+                    true
+                }
+                R.id.action_delete -> {
+                    confirmDelete()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    // ===== 插入待办 =====
+
+    private fun insertTask() {
+        if (markdownMode) {
+            MarkdownEditorHelper.prependLines(markdownEdit, "- [ ] ")
+        } else {
+            exec("insertUnorderedList")
+            Toast.makeText(this, "富文本模式下已插入列表，可手动添加复选框", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ===== 格式面板 =====
+
+    private fun toggleFormatPanel() {
+        if (panelVisible) hideFormatPanel() else showFormatPanel()
+    }
+
+    private fun showFormatPanel() {
+        formatPanel.visibility = View.VISIBLE
+        panelVisible = true
+    }
+
+    private fun hideFormatPanel() {
+        formatPanel.visibility = View.GONE
+        panelVisible = false
+    }
+
     // ===== 模式切换 =====
 
     private fun switchToMarkdown() {
@@ -276,6 +358,7 @@ class EditorActivity : AppCompatActivity() {
         markdownEdit.setSelection(0)
         markdownMode = true
         markdownPreview = false
+        hideFormatPanel()
         applyMarkdownMode()
     }
 
@@ -284,6 +367,7 @@ class EditorActivity : AppCompatActivity() {
         latestHtml = MarkdownConverter.toHtml(md)
         markdownMode = false
         markdownPreview = false
+        hideFormatPanel()
         applyMarkdownMode()
         if (pageReady) pushContent()
     }
@@ -309,25 +393,23 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun applyMarkdownMode() {
-        val toggleBtn = findViewById<Button>(R.id.button_mode_toggle)
+        val toggleBtn = findViewById<TextView>(R.id.button_mode_toggle)
         if (markdownMode) {
             webView.visibility = View.GONE
             sourceEdit.visibility = View.GONE
-            findViewById<View>(R.id.format_bar).visibility = View.GONE
             markdownEdit.visibility = View.VISIBLE
-            findViewById<View>(R.id.format_bar_markdown).visibility = View.VISIBLE
             previewWebView.visibility = View.GONE
             toggleBtn.setText(R.string.rich_text_mode)
+            // Markdown 模式下隐藏格式面板
+            findViewById<View>(R.id.btn_format_panel).visibility = View.GONE
         } else {
             markdownEdit.visibility = View.GONE
-            findViewById<View>(R.id.format_bar_markdown).visibility = View.GONE
             previewWebView.visibility = View.GONE
             webView.visibility = View.VISIBLE
-            findViewById<View>(R.id.format_bar).visibility = View.VISIBLE
             toggleBtn.setText(R.string.markdown_mode)
+            findViewById<View>(R.id.btn_format_panel).visibility = View.VISIBLE
         }
-        updateFillBar()
-        invalidateOptionsMenu()
+        updateMetaInfo()
     }
 
     private fun applyMarkdownPreview() {
@@ -352,17 +434,10 @@ class EditorActivity : AppCompatActivity() {
         webView.destroy()
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         syncFromSource()
-        if (markdownMode) {
-            latestHtml = MarkdownConverter.toHtml(markdownEdit.text.toString())
-        }
+        if (markdownMode) latestHtml = MarkdownConverter.toHtml(markdownEdit.text.toString())
         outState.putString(KEY_HTML, latestHtml)
         outState.putBoolean(KEY_SOURCE_MODE, sourceMode)
         outState.putBoolean(KEY_MARKDOWN_MODE, markdownMode)
@@ -377,10 +452,8 @@ class EditorActivity : AppCompatActivity() {
         sourceMode = true
         sourceEdit.setText(latestHtml)
         webView.visibility = View.GONE
-        findViewById<View>(R.id.format_bar).visibility = View.GONE
         sourceEdit.visibility = View.VISIBLE
-        updateFillBar()
-        invalidateOptionsMenu()
+        hideFormatPanel()
     }
 
     private fun leaveSourceMode() {
@@ -389,29 +462,14 @@ class EditorActivity : AppCompatActivity() {
         pushContent()
         sourceEdit.visibility = View.GONE
         webView.visibility = View.VISIBLE
-        findViewById<View>(R.id.format_bar).visibility = View.VISIBLE
-        updateFillBar()
-        invalidateOptionsMenu()
     }
 
     private inner class Bridge {
         @JavascriptInterface
         fun onHtmlChanged(html: String) {
-            val slotChanged = TemplateFiller.hasSlot(html) != TemplateFiller.hasSlot(latestHtml)
             latestHtml = html
-            if (slotChanged) runOnUiThread { updateFillBar() }
+            runOnUiThread { updateMetaInfo() }
         }
-    }
-
-    private fun updateFillBar() {
-        findViewById<View>(R.id.fill_bar).visibility =
-            if (isTemplate && !sourceMode && !markdownMode && TemplateFiller.hasSlot(latestHtml)) View.VISIBLE
-            else View.GONE
-    }
-
-    private fun applyFillValue() {
-        val value = findViewById<EditText>(R.id.fill_value).text.toString()
-        exec("setSlotText(${JSONObject.quote(value)})", raw = true)
     }
 
     private fun pushContent() {
@@ -429,6 +487,31 @@ class EditorActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
+    /** 自动排版：获取当前 HTML，格式化后推回编辑器。 */
+    private fun autoFormat() {
+        if (!pageReady || sourceMode || markdownMode) return
+        webView.evaluateJavascript("getHtml()") { result ->
+            val html = try {
+                org.json.JSONTokener(result).nextValue() as? String ?: latestHtml
+            } catch (_: Exception) {
+                latestHtml
+            }
+            val formatted = ContentFormatter.formatHtml(html)
+            if (formatted.isNotBlank() && formatted != html) {
+                latestHtml = formatted
+                pushContent()
+                updateMetaInfo()
+                Toast.makeText(this, R.string.auto_format_done, Toast.LENGTH_SHORT).show()
+            } else if (formatted.isBlank()) {
+                Toast.makeText(this, "排版结果为空，已保留原内容", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, R.string.auto_format_no_change, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ===== 颜色/高亮/链接对话框 =====
+
     private fun pickColor() {
         AlertDialog.Builder(this)
             .setTitle(R.string.text_color)
@@ -443,16 +526,6 @@ class EditorActivity : AppCompatActivity() {
             .setTitle(R.string.highlight)
             .setItems(resources.getStringArray(R.array.highlight_names)) { _, which ->
                 exec("hiliteColor", HIGHLIGHT_VALUES[which])
-            }
-            .show()
-    }
-
-    private fun pickHeading() {
-        val names = arrayOf("标题 1", "标题 2", "标题 3", "正文")
-        AlertDialog.Builder(this)
-            .setTitle(R.string.heading_level)
-            .setItems(names) { _, which ->
-                exec("formatBlock", HEADING_TAGS[which])
             }
             .show()
     }
@@ -478,50 +551,6 @@ class EditorActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun pickMarkdownLink() {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            hint = getString(R.string.link_hint)
-            maxLines = 1
-        }
-        val container = FrameLayout(this).apply {
-            val pad = (16 * resources.displayMetrics.density).toInt()
-            setPadding(pad, 0, pad, 0)
-            addView(input)
-        }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.insert_link)
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val url = normalizeUrl(input.text.toString()) ?: return@setPositiveButton
-                MarkdownEditorHelper.insertLink(markdownEdit, url)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun pickMarkdownImage() {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            hint = "图片 URL…"
-            maxLines = 1
-        }
-        val container = FrameLayout(this).apply {
-            val pad = (16 * resources.displayMetrics.density).toInt()
-            setPadding(pad, 0, pad, 0)
-            addView(input)
-        }
-        AlertDialog.Builder(this)
-            .setTitle("插入图片")
-            .setView(container)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val url = normalizeUrl(input.text.toString()) ?: return@setPositiveButton
-                MarkdownEditorHelper.insertImage(markdownEdit, url)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
     private fun normalizeUrl(raw: String): String? {
         val url = raw.trim()
         if (url.isEmpty()) return null
@@ -535,9 +564,9 @@ class EditorActivity : AppCompatActivity() {
         return String.format(Locale.ROOT, "#%06X", 0xFFFFFF and color)
     }
 
+    // ===== 标签 =====
+
     private fun renderTags() {
-        val row = findViewById<View>(R.id.tag_row)
-        row.visibility = View.VISIBLE
         if (currentTags.isEmpty()) {
             editTags.visibility = View.GONE
             editTags.removeAllViews()
@@ -553,6 +582,10 @@ class EditorActivity : AppCompatActivity() {
                 isClickable = false
                 isCheckable = false
                 setEnsureMinTouchTargetSize(false)
+                textSize = 11f
+                chipMinHeight = 24f
+                chipStartPadding = 6f
+                chipEndPadding = 6f
             })
         }
     }
@@ -561,7 +594,6 @@ class EditorActivity : AppCompatActivity() {
         val allTags = TagStore.all(this).toMutableList()
         val working = currentTags.toMutableSet()
         val existingChecked = allTags.map { it in working }.toBooleanArray()
-
         val builder = AlertDialog.Builder(this)
         builder.setTitle(R.string.edit_tags)
         if (allTags.isEmpty()) {
@@ -631,66 +663,8 @@ class EditorActivity : AppCompatActivity() {
         builder.show()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_editor, menu)
-        return true
-    }
+    // ===== 保存与导出 =====
 
-    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        menu.findItem(R.id.action_source)?.title =
-            if (sourceMode) getString(R.string.visual_editor)
-            else if (markdownMode) getString(R.string.markdown_edit)
-            else getString(R.string.edit_source)
-        // Markdown 模式下隐藏 HTML 源码选项
-        menu.findItem(R.id.action_source)?.isVisible = !markdownMode
-        return super.onPrepareOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        R.id.action_save -> {
-            saveIfMeaningful()
-            Toast.makeText(
-                this,
-                if (noteId == NO_ID) R.string.nothing_to_save else R.string.saved,
-                Toast.LENGTH_SHORT,
-            ).show()
-            true
-        }
-        R.id.action_copy -> {
-            saveIfMeaningful()
-            val html = currentHtml()
-            ClipboardHelper.copyNote(
-                this,
-                Note(id = noteId, title = titleEdit.text.toString().trim(), html = html, updatedAt = 0),
-                isTemplate = isTemplate,
-            )
-            ClipboardHelper.showCopiedFeedback(this)
-            true
-        }
-        R.id.action_export_md -> {
-            saveIfMeaningful()
-            val name = (titleEdit.text.toString().trim().ifBlank { "snippet" }) + ".md"
-            exportMdLauncher.launch(name)
-            true
-        }
-        R.id.action_export_text -> {
-            saveIfMeaningful()
-            val name = (titleEdit.text.toString().trim().ifBlank { "snippet" }) + ".txt"
-            exportTextLauncher.launch(name)
-            true
-        }
-        R.id.action_source -> {
-            if (sourceMode) leaveSourceMode() else enterSourceMode()
-            true
-        }
-        R.id.action_delete -> {
-            confirmDelete()
-            true
-        }
-        else -> super.onOptionsItemSelected(item)
-    }
-
-    /** 获取当前编辑区的 HTML（Markdown 模式下实时转换）。 */
     private fun currentHtml(): String {
         return if (markdownMode) {
             MarkdownConverter.toHtml(markdownEdit.text.toString())
@@ -703,18 +677,12 @@ class EditorActivity : AppCompatActivity() {
     private fun exportMarkdown(uri: Uri) {
         try {
             val title = titleEdit.text.toString().trim()
-            val md = if (markdownMode) {
-                markdownEdit.text.toString()
-            } else {
-                MarkdownConverter.toMarkdown(currentHtml())
-            }
+            val md = if (markdownMode) markdownEdit.text.toString() else MarkdownConverter.toMarkdown(currentHtml())
             val content = buildString {
                 if (title.isNotEmpty()) append("# ").append(title).append("\n\n")
                 append(md)
             }
-            contentResolver.openOutputStream(uri, "wt")?.use {
-                it.write(content.toByteArray(Charsets.UTF_8))
-            }
+            contentResolver.openOutputStream(uri, "wt")?.use { it.write(content.toByteArray(Charsets.UTF_8)) }
             Toast.makeText(this, R.string.export_done, Toast.LENGTH_SHORT).show()
         } catch (_: Exception) {
             Toast.makeText(this, R.string.export_failed, Toast.LENGTH_SHORT).show()
@@ -728,9 +696,7 @@ class EditorActivity : AppCompatActivity() {
                 if (title.isNotEmpty()) append(title).append("\n\n")
                 append(HtmlConverter.plainText(currentHtml()))
             }
-            contentResolver.openOutputStream(uri, "wt")?.use {
-                it.write(text.toByteArray(Charsets.UTF_8))
-            }
+            contentResolver.openOutputStream(uri, "wt")?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
             Toast.makeText(this, R.string.export_done, Toast.LENGTH_SHORT).show()
         } catch (_: Exception) {
             Toast.makeText(this, R.string.export_failed, Toast.LENGTH_SHORT).show()

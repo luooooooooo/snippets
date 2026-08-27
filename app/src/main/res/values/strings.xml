@@ -128,6 +128,17 @@
     <string name="format_align_left">左</string>
     <string name="format_align_center">中</string>
     <string name="format_align_right">右</string>
+    <string name="auto_format">排版</string>
+    <string name="auto_format_done">已自动排版</string>
+    <string name="auto_format_no_change">无需调整</string>
+    <string name="back">返回</string>
+    <string name="more">更多</string>
+    <string name="done">完成</string>
+    <string name="format_panel">格式</string>
+    <string name="task_list">待办</string>
+    <string name="insert">插入</string>
+    <string name="insert_image">图片</string>
+    <string name="format_body">正文</string>
     <string name="format_quote">引</string>
     <string name="format_code">码</string>
     <string name="format_heading">H</string>
