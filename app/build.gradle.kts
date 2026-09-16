@@ -10,8 +10,8 @@ android {
         applicationId = "com.kvelzer.snippets"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.4"
+        versionCode = 5
+        versionName = "1.0.5"
     }
 
     signingConfigs {
@@ -28,8 +28,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false // off to avoid R8/ProGuard release crash
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

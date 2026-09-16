@@ -35,6 +35,14 @@ object TagStore {
         true
     }
 
+    /** Replaces the whole tag set with the given labels (used on backup restore). */
+    fun replaceAll(context: Context, tags: List<String>) {
+        synchronized(lock) {
+            val clean = tags.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+            persist(context, clean)
+        }
+    }
+
     /** Removes a tag everywhere: from this collection and from every note. */
     fun remove(context: Context, tag: String) {
         synchronized(lock) {

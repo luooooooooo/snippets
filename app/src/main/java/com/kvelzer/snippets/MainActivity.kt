@@ -783,13 +783,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyImport(data: Backup.Data, replace: Boolean) {
+        val importedTags = (data.notes + data.templates).flatMap { it.tags }
         if (replace) {
             NoteStore.replaceAll(this, data.notes)
             TemplateStore.replaceAll(this, data.templates)
+            TagStore.replaceAll(this, importedTags)
         } else {
             NoteStore.addAll(this, data.notes)
             TemplateStore.addAll(this, data.templates)
+            for (tag in importedTags) if (tag.isNotBlank()) TagStore.add(this, tag)
         }
+        buildTagBar()
         refreshWidgets()
         refresh()
         Toast.makeText(this, R.string.import_done, Toast.LENGTH_SHORT).show()
